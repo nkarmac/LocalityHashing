@@ -4,12 +4,12 @@
 from fnv import *
 import uuid
 import time
+import numpy as np
 
 threshold = 0.6
 s = 14  # num hash tables
 r = 6   # minhash signature size
 p = 15373875993579943603 # 64-bit prime num
-htsize = 10000000 # hashtable size
 
 def main():
 
@@ -17,8 +17,8 @@ def main():
     questionFile = input("\nPlease specify an input file to find similarites in: (eg: question_4k.tsv)\n")
     lines = [line.rstrip('\n').split('\t') for line in open(questionFile, encoding="utf-8")]
     
-
     # stores all sets of words in a dictionary indexed by its qid
+    numquestions = 0
     questions = {}
     i = 0
     for question in lines:
@@ -30,66 +30,55 @@ def main():
         elif len(question) != 2:
             continue
         questions[question[0]] = question[1].split(' ')
+        numquestions += 1
     
     # creating indexable random numbers for hashing
     seta = []
     setb = []
-    for i in range(s):
+    for i in range(r):
         seta.append(uuid.uuid4().int & (1<<64)-1)
         setb.append(uuid.uuid4().int & (1<<64)-1)
     
     # build dataset of hashtables
     Dataset = []
+    minHashes = np.empty((s,numquestions,r))
     for i in range(s):
-        hashtable = [None] * htsize
-
+        hashtable = {}
+        k = 0
         for qid, words in questions.items():
-            signature = []
-            for i in range(r):
+            minSig = np.empty(r)
+            for j in range(r):
                 minHash = p+1
                 for word in words:
-                    hc = hashFunc(word, seta[i], setb[i])
+                    hc = hashFunc(word, seta[j], setb[j])
                     if hc < minHash:
                         minHash = hc
-                signature.append(str(minHash))
-            sigint = int(''.join(signature))
-            temp = hashtable[sigint % htsize]
-            if temp == None:
-                hashtable[sigint % htsize] = [qid] * 1
-            elif qid not in temp:
-                hashtable[sigint % htsize].append(qid)
+                minHashes[i,k,j] = minHash
+            temp = ''.join(str(x) for x in minHashes[i,k])
+            if temp not in hashtable:
+                hashtable[temp] = [qid] * 1
+            elif qid not in hashtable[temp]:
+                hashtable[temp].append(qid)
+            k += 1
         Dataset.append(hashtable)
 
-    bigSetBaby = {}
+    print()
+    print("qid\tsimilar-qids")
+    k = 0
     for qid, words in questions.items():
         similarSet = []
         for i in range(s):
             hashtable = Dataset[i]
 
-            signature = []
-            for i in range(r):
-                minHash = p+1
-                for word in words:
-                    hc = hashFunc(word, seta[i], setb[i])
-                    if hc < minHash:
-                        minHash = hc
-                signature.append(str(minHash))
-            sigint = int(''.join(signature))
-            temp = hashtable[sigint % htsize]
-
-            for newqid in temp:
+            for newqid in hashtable[''.join(str(x) for x in minHashes[i,k])]:
                 if newqid != qid:
                     if newqid not in similarSet:
                         if findSims(questions[qid], questions[newqid]):
                             similarSet.append(newqid)
-        bigSetBaby[qid] = similarSet
-    
-    print()
-    print("qid\tsimilar-qids")
-
-    for qid, similarWords in bigSetBaby.items():
+        k += 1
         print("%s\t" %qid, end='')
-        print(','.join(similarWords))
+        print(','.join(similarSet))
+        
     
     
         
