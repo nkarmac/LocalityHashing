@@ -1,12 +1,14 @@
 #   This file implements the native/naive Jaccard similarity algorithm
 #   to find similarities within a large dataset of lines
 
+import time
+
 def main():
 
 	threshold = 0.6
 
     # stores questions into a list with the qid in lines[0] and the question in lines[1]
-    questionFile = input("Please specify an input file to find similarites in: (eg: question_4k.tsv)\n")
+    questionFile = input("\nPlease specify an input file to find similarites in: (eg: question_4k.tsv)\n")
     lines = [line.rstrip('\n').split('\t') for line in open(questionFile, encoding="utf-8")]
 
 
@@ -25,12 +27,16 @@ def main():
 
 	print()
     print("qid\tsimilar-qids")
+	
+	starttime = time.time()
 
     # finds similar questions and prints
     for qid, words in questions.items():
         similarqid = findSims(questions, words, threshold)
         print("%s\t" % qid, end="")
         print(','.join(similarqid))
+	
+	print("\ntotal execution time is: %s seconds\n" % (time.time() - starttime))
 
 
 def findSims(questions, words1, threshold):
