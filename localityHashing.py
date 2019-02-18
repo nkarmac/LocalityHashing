@@ -17,6 +17,7 @@ def main():
     questionFile = input("\nPlease specify an input file to find similarites in: (eg: question_4k.tsv)\n")
     lines = [line.rstrip('\n').split('\t') for line in open(questionFile, encoding="utf-8")]
     
+
     # stores all sets of words in a dictionary indexed by its qid
     numquestions = 0
     questions = {}
@@ -32,6 +33,7 @@ def main():
         questions[question[0]] = question[1].split(' ')
         numquestions += 1
     
+
     # creating indexable random numbers for hashing
     seta = []
     setb = []
@@ -41,19 +43,27 @@ def main():
     
     # build dataset of hashtables
     Dataset = []
-    minHashes = np.empty((s,numquestions,r))
+    # set of all minHashes
+    minHashes = np.empty((s,numquestions,r))    
+
+
+    # create s hashtables
     for i in range(s):
-        hashtable = {}
+        hashtable = {}  
         k = 0
         for qid, words in questions.items():
             minSig = np.empty(r)
+            # loops through all hash functions
             for j in range(r):
                 minHash = p+1
+                # hashes each word
                 for word in words:
                     hc = hashFunc(word, seta[j], setb[j])
                     if hc < minHash:
                         minHash = hc
+                # stores the minimum hash
                 minHashes[i,k,j] = minHash
+            # stores the qid indexed by the minHash sequence into the current hashtable
             temp = ''.join(str(x) for x in minHashes[i,k])
             if temp not in hashtable:
                 hashtable[temp] = [qid] * 1
@@ -62,6 +72,8 @@ def main():
             k += 1
         Dataset.append(hashtable)
 
+    # prints headers, checks each hashtable indexed by each items minHash
+    # for similar items (by locality sensitivity), and outputs them next to each respective qid
     print()
     print("qid\tsimilar-qids")
     k = 0
@@ -70,10 +82,11 @@ def main():
         for i in range(s):
             hashtable = Dataset[i]
 
+            # retrieve the minHash sequence for this item in the current hashtable
             for newqid in hashtable[''.join(str(x) for x in minHashes[i,k])]:
-                if newqid != qid:
-                    if newqid not in similarSet:
-                        if findSims(questions[qid], questions[newqid]):
+                if newqid != qid:                                           # exclude the current item
+                    if newqid not in similarSet:                            # dont add dups
+                        if findSims(questions[qid], questions[newqid]):     # use Native Jaccard to remove *FALSE POSITIVES*
                             similarSet.append(newqid)
         k += 1
         print("%s\t" %qid, end='')
@@ -82,7 +95,8 @@ def main():
     
     
         
-
+# encodes the word using fnv, and returns a basic hashed 
+# value using random ints a,b and a fixed prime number p
 def hashFunc(word,a,b):
     x = hash(word.encode('utf-8'), bits=64)
     hc = (a*x+b) % p
