@@ -5,12 +5,12 @@ import time
 
 def main():
 
-	threshold = 0.6
+    threshold = 0.6
 
     # stores questions into a list with the qid in lines[0] and the question in lines[1]
     questionFile = input("\nPlease specify an input file to find similarites in: (eg: question_4k.tsv)\n")
     lines = [line.rstrip('\n').split('\t') for line in open(questionFile, encoding="utf-8")]
-
+    
 
     # stores all sets of words in a dictionary indexed by its qid
     questions = {}
@@ -25,19 +25,18 @@ def main():
             continue
         questions[question[0]] = question[1].split(' ')
 
-	print()
+    print()
     print("qid\tsimilar-qids")
-	
-	starttime = time.time()
+
+    starttime = time.time()
 
     # finds similar questions and prints
     for qid, words in questions.items():
         similarqid = findSims(questions, words, threshold)
         print("%s\t" % qid, end="")
         print(','.join(similarqid))
-	
-	print("\ntotal execution time is: %s seconds\n" % (time.time() - starttime))
 
+    print("\ntotal execution time is: %s seconds\n" % (time.time() - starttime))
 
 def findSims(questions, words1, threshold):
     similarqid = []
@@ -60,4 +59,4 @@ def findSims(questions, words1, threshold):
     return similarqid
 
 if __name__ == "__main__":
-    main() 
+    main()
