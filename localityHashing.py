@@ -3,7 +3,6 @@
 
 from fnv import *
 import uuid
-import time
 import numpy as np
 
 threshold = 0.6
