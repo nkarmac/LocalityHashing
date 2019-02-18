@@ -3,6 +3,8 @@
 
 def main():
 
+	threshold = 0.6
+
     # stores questions into a list with the qid in lines[0] and the question in lines[1]
     questionFile = input("Please specify an input file to find similarites in: (eg: question_4k.tsv)\n")
     lines = [line.rstrip('\n').split('\t') for line in open(questionFile, encoding="utf-8")]
@@ -21,19 +23,22 @@ def main():
             continue
         questions[question[0]] = question[1].split(' ')
 
-    # Get threshold from user (0.6 for question 1)
-    threshold = float(input("Please enter a threshold (eg: 0.6)\n"))
+	print()
+    print("qid\tsimilar-qids")
 
+    # finds similar questions and prints
     for qid, words in questions.items():
         similarqid = findSims(questions, words, threshold)
-        if len(similarqid) > 0:
-            print(qid, similarqid)
+        print("%s\t" % qid, end="")
+        print(','.join(similarqid))
 
 
 def findSims(questions, words1, threshold):
     similarqid = []
 
-    # Looking through item2
+    # Naive Jaccard Algorithm
+    # loops through all words and divides intersect of words1 and words2 by the union
+    # and adds the qid to similarqid[] if the answer > threshold
     for qid,words2 in questions.items():
         if words2 == words1:
             continue
@@ -44,7 +49,7 @@ def findSims(questions, words1, threshold):
                 intersect += 1
                 continue
             union += 1
-        if (intersect / union) > threshold:
+        if (intersect / union) >= threshold:
             similarqid.append(qid)
     return similarqid
 
